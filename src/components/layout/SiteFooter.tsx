@@ -9,14 +9,8 @@ export default function SiteFooter() {
     <footer className="mt-auto border-t border-stone-200 bg-stone-900 text-stone-300">
       <div className="page-container grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-4">
-          <div className="flex items-center gap-2.5">
-            <img src="/wellton-mark.svg" alt="Wellton Real Estate" className="h-9 w-9 shrink-0" />
-            <span className="leading-tight">
-              <span className="block text-lg font-black tracking-[-0.06em] text-white">WELLTON</span>
-              <span className="block text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-brand-400">
-                Real Estate
-              </span>
-            </span>
+          <div className="flex items-center justify-start">
+            <img src="/wellton-logo.svg" alt="Wellton Real Estate" className="h-20 w-auto" />
           </div>
           <p className="max-w-xs text-sm leading-relaxed text-stone-400">
             We help clients buy, sell, rent and manage properties through professional guidance,

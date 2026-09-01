@@ -11,16 +11,8 @@ import { MenuIcon, CloseIcon, WhatsAppIcon, PhoneIcon } from '@/components/share
 
 function Brand() {
   return (
-    <Link href="/" className="flex items-center gap-3">
-      <img src="/wellton-mark.svg" alt="Wellton Real Estate" className="h-11 w-11 shrink-0" />
-      <span className="leading-tight">
-        <span className="block text-xl font-black tracking-[-0.08em] text-brand-700 sm:text-2xl">
-          WELLTON
-        </span>
-        <span className="block text-[0.6rem] font-bold uppercase tracking-[0.28em] text-stone-700">
-          Real Estate
-        </span>
-      </span>
+    <Link href="/" className="flex items-center justify-center" aria-label="Wellton Real Estate home">
+      <img src="/wellton-logo.svg" alt="Wellton Real Estate" className="h-16 w-auto sm:h-20" />
     </Link>
   );
 }
