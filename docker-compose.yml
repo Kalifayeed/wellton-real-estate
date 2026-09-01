@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wellton_user
+      POSTGRES_PASSWORD: wellton_secret
+      POSTGRES_DB: wellton
+    volumes:
+      - wellton-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wellton_user -d wellton"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://wellton_user:wellton_secret@db:5432/wellton?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:-wellton-dev-secret-change-me}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-Wellton Real Estate}
+      NEXT_PUBLIC_PHONE: ${NEXT_PUBLIC_PHONE:-+254700000000}
+      NEXT_PUBLIC_WHATSAPP: ${NEXT_PUBLIC_WHATSAPP:-254700000000}
+      NEXT_PUBLIC_EMAIL: ${NEXT_PUBLIC_EMAIL:-info@wellton.example.com}
+      NEXT_PUBLIC_ADDRESS: ${NEXT_PUBLIC_ADDRESS:-Nairobi, Kenya}
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "3000:3000"
+    # The standalone image runs the app server directly. Schema setup
+    # (`prisma db push`) and seeding are one-off steps run from the host.
+    command: ["node", "server.js"]
+
+volumes:
+  wellton-pgdata:

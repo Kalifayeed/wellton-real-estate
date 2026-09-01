@@ -1,0 +1,581 @@
+// Wellton Real Estate — data model
+// Designed so Phase 2 features (commission, revenue, lease mgmt, rent
+// collection, landlord/tenant accounts, land sales, developer projects)
+// can be added without restructuring.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Enums
+// ============================================================
+
+enum Role {
+  ADMIN
+  MANAGER
+  AGENT
+}
+
+enum ListingPurpose {
+  SALE
+  RENT
+  BOTH
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  TOWNHOUSE
+  VILLA
+  OFF_PLAN_DEVELOPMENT
+  COMPLETED_DEVELOPMENT
+  INVESTMENT
+  COMMERCIAL
+  LAND
+}
+
+enum RentalFrequency {
+  MONTHLY
+  WEEKLY
+  YEARLY
+}
+
+enum FurnishStatus {
+  FURNISHED
+  UNFURNISHED
+  SERVICED
+  PARTLY_FURNISHED
+}
+
+enum PropertyStatus {
+  OFF_PLAN
+  UNDER_CONSTRUCTION
+  COMPLETED
+  READY_TO_MOVE_IN
+  AVAILABLE_FOR_RENT
+  OCCUPIED
+  SOLD
+  RENTED
+  UNAVAILABLE
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  VIEWING_SCHEDULED
+  APPLICATION_SUBMITTED
+  NEGOTIATING
+  CLOSED_WON
+  CLOSED_LOST
+  NOT_QUALIFIED
+}
+
+enum LeadSource {
+  WEBSITE
+  WHATSAPP
+  FACEBOOK
+  INSTAGRAM
+  REFERRAL
+  AGENT
+  PORTAL
+  GOOGLE
+  WALK_IN
+  OTHER
+}
+
+enum ViewingStatus {
+  REQUESTED
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  RESCHEDULED
+  CANCELLED
+  NO_SHOW
+}
+
+enum ApplicationStatus {
+  NEW
+  UNDER_REVIEW
+  VIEWING_SCHEDULED
+  DOCUMENTS_REQUESTED
+  APPROVED
+  DECLINED
+  LEASE_SIGNED
+  WITHDRAWN
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  CONTACTED
+  APPROVED
+  REJECTED
+  ONBOARDED
+  LISTED
+}
+
+enum ServiceType {
+  SELL_MY_PROPERTY
+  RENT_OUT_PROPERTY
+  PROPERTY_MANAGEMENT
+  RENTAL_VALUATION
+  TENANT_SOURCING
+  PROPERTY_MARKETING
+}
+
+enum InquiryType {
+  MORE_INFORMATION
+  SCHEDULE_VIEWING
+  APPLY_TO_RENT
+  PAYMENT_TERMS
+  VIRTUAL_VIEWING
+}
+
+enum PurposeType {
+  LIVING
+  INVESTMENT
+  RENTAL_INCOME
+  FAMILY_USE
+  SHORT_TERM_ACCOMMODATION
+  RELOCATION
+}
+
+enum ContactMethod {
+  PHONE
+  WHATSAPP
+  EMAIL
+}
+
+enum AuditAction {
+  PROPERTY_CREATED
+  PROPERTY_UPDATED
+  PROPERTY_PUBLISHED
+  PROPERTY_UNPUBLISHED
+  PROPERTY_DELETED
+  LEAD_ASSIGNED
+  LEAD_REASSIGNED
+  LEAD_STATUS_CHANGED
+  APPLICATION_UPDATED
+  VIEWING_SCHEDULED
+  USER_CREATED
+  USER_PERMISSIONS_CHANGED
+  SUBMISSION_UPDATED
+  OTHER
+}
+
+// ============================================================
+// Models
+// ============================================================
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  phone        String?
+  passwordHash String
+  role         Role      @default(AGENT)
+  isActive     Boolean   @default(true)
+  avatarUrl    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  createdProperties Property[] @relation("PropertyOwner")
+  assignedLeads     Lead[]
+  scheduledViewings Viewing[]   @relation("ViewingAgent")
+  assignedApplications RentalApplication[]
+  reviewedSubmissions OwnerSubmission[] @relation("OwnerSubmissionReviewedBy")
+  submissionReviews SubmissionReview[] @relation("SubmissionReviewedBy")
+  blogPosts         BlogPost[]
+  activities        LeadActivity[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model Location {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  region    String?
+  isActive  Boolean    @default(true)
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now())
+
+  properties Property[]
+
+  @@map("locations")
+}
+
+model Amenity {
+  id       String   @id @default(cuid())
+  name     String
+  slug     String   @unique
+  category String?
+  isActive Boolean  @default(true)
+
+  properties PropertyAmenity[]
+
+  @@map("amenities")
+}
+
+model Property {
+  id               String          @id @default(cuid())
+  slug             String          @unique
+  title            String
+  description      String?
+  locationId       String
+  area             String?
+  propertyType     PropertyType
+  listingPurpose   ListingPurpose
+  price            Decimal?        @db.Decimal(14, 2)
+  rentalPrice      Decimal?        @db.Decimal(14, 2)
+  rentalFrequency  RentalFrequency? @default(MONTHLY)
+  bedrooms         Int?
+  bathrooms        Int?
+  sizeSqm          Int?
+  furnishStatus    FurnishStatus?
+  propertyStatus   PropertyStatus  @default(COMPLETED)
+  availabilityDate DateTime?
+  completionDate   DateTime?
+  leaseTerms       String?
+  minRentalPeriod  String?
+  paymentPlan      String?
+  securityDeposit  Decimal?        @db.Decimal(14, 2)
+  serviceCharge    Decimal?        @db.Decimal(14, 2)
+  utilities        String?
+  tenantRequirement String?
+  petPolicy        String?
+  utilitiesIncluded String?
+  managedByWellton Boolean         @default(false)
+  latitude         Float?
+  longitude        Float?
+  isFeatured       Boolean         @default(false)
+  isPublished      Boolean         @default(false)
+  virtualTourUrl   String?
+  mapEmbedUrl      String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  location            Location                @relation(fields: [locationId], references: [id])
+  owner               User?                   @relation("PropertyOwner", fields: [ownerId], references: [id])
+  ownerId             String?
+  images              PropertyImage[]
+  videos              PropertyVideo[]
+  floorPlans          PropertyFloorPlan[]
+  amenities           PropertyAmenity[]
+  leads               Lead[]
+  viewings            Viewing[]
+  applications        RentalApplication[]
+
+  @@index([slug])
+  @@index([propertyType])
+  @@index([listingPurpose])
+  @@index([isPublished])
+  @@index([locationId])
+  @@map("properties")
+}
+model PropertyImage {
+  id         String   @id @default(cuid())
+  propertyId String
+  url        String
+  altText    String?
+  isCover    Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@map("property_images")
+}
+
+model PropertyVideo {
+  id         String   @id @default(cuid())
+  propertyId String
+  url        String
+  label      String?
+  sortOrder  Int      @default(0)
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_videos")
+}
+
+model PropertyFloorPlan {
+  id         String   @id @default(cuid())
+  propertyId String
+  url        String
+  label      String?
+  sortOrder  Int      @default(0)
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_floor_plans")
+}
+
+model PropertyAmenity {
+  propertyId String
+  amenityId  String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([propertyId, amenityId])
+  @@map("property_amenities")
+}
+
+model Lead {
+  id               String           @id @default(cuid())
+  name             String
+  phone            String?
+  email            String?
+  propertyId       String?
+  listingPurpose   ListingPurpose?
+  budget           Decimal?         @db.Decimal(14, 2)
+  budgetFrequency  RentalFrequency?
+  preferredLocation String?
+  preferredMoveIn  DateTime?
+  inquiryDate      DateTime         @default(now())
+  source           LeadSource       @default(WEBSITE)
+  status           LeadStatus       @default(NEW)
+  assignedToId     String?
+  notes            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  property      Property? @relation(fields: [propertyId], references: [id])
+  assignedTo    User?     @relation(fields: [assignedToId], references: [id])
+  activities    LeadActivity[]
+  viewings      Viewing[]
+  applications  RentalApplication[]
+  assignments   LeadAssignment[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([propertyId])
+  @@map("leads")
+}
+
+model LeadActivity {
+  id          String   @id @default(cuid())
+  leadId      String
+  userId      String?
+  type        String   @default("note")
+  note        String?
+  followUpDate DateTime?
+  createdAt   DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@map("lead_activities")
+}
+
+model LeadAssignment {
+  id         String   @id @default(cuid())
+  leadId     String
+  agentId    String
+  assignedBy String?
+  createdAt  DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@map("lead_assignments")
+}
+model Viewing {
+  id          String        @id @default(cuid())
+  propertyId  String
+  leadId      String?
+  agentId     String?
+  requestedAt DateTime      @default(now())
+  scheduledAt DateTime?
+  status      ViewingStatus @default(REQUESTED)
+  outcome     String?
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id])
+  lead     Lead?    @relation(fields: [leadId], references: [id])
+  agent    User?    @relation("ViewingAgent", fields: [agentId], references: [id])
+
+  @@index([propertyId])
+  @@index([leadId])
+  @@map("viewings")
+}
+
+model RentalApplication {
+  id               String            @id @default(cuid())
+  propertyId       String
+  leadId           String?
+  applicantName    String
+  phone            String
+  email            String?
+  currentAddress   String?
+  preferredMoveIn  DateTime?
+  leaseDuration    String?
+  employmentStatus String?
+  employer         String?
+  incomeRange      String?
+  occupants        Int?
+  references       String?
+  additionalInfo   String?
+  status           ApplicationStatus @default(NEW)
+  assignedToId     String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id])
+  lead     Lead?    @relation(fields: [leadId], references: [id])
+  assignedTo User?  @relation(fields: [assignedToId], references: [id])
+  documents ApplicationDocument[]
+
+  @@index([propertyId])
+  @@index([status])
+  @@map("rental_applications")
+}
+
+model ApplicationDocument {
+  id            String   @id @default(cuid())
+  applicationId String
+  fileName      String
+  storedPath    String
+  mimeType      String?
+  sizeBytes     Int?
+  uploadedAt    DateTime @default(now())
+
+  application RentalApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("application_documents")
+}
+
+model OwnerSubmission {
+  id              String           @id @default(cuid())
+  ownerName       String
+  phone           String
+  email           String?
+  location        String?
+  propertyType    PropertyType?
+  bedrooms        Int?
+  askingPrice     Decimal?         @db.Decimal(14, 2)
+  rentalPrice     Decimal?         @db.Decimal(14, 2)
+  furnishStatus   FurnishStatus?
+  availability    String?
+  description     String?
+  images          Json             @default("[]")
+  serviceType     ServiceType?
+  contactMethod   ContactMethod?   @default(PHONE)
+  status          SubmissionStatus @default(SUBMITTED)
+  reviewedById    String?
+  reviewedNote    String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  reviewedBy User?              @relation("OwnerSubmissionReviewedBy", fields: [reviewedById], references: [id])
+  reviews    SubmissionReview[]
+
+  @@index([status])
+  @@map("owner_submissions")
+}
+
+model SubmissionReview {
+  id           String           @id @default(cuid())
+  submissionId String
+  reviewerId   String?
+  status       SubmissionStatus
+  note         String?
+  createdAt    DateTime         @default(now())
+
+  submission OwnerSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewer   User?           @relation("SubmissionReviewedBy", fields: [reviewerId], references: [id])
+
+  @@map("submission_reviews")
+}
+model BlogCategory {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  createdAt DateTime   @default(now())
+
+  posts BlogPost[]
+
+  @@map("blog_categories")
+}
+
+model BlogPost {
+  id             String      @id @default(cuid())
+  slug           String      @unique
+  title          String
+  excerpt        String?
+  content        String
+  featuredImage  String?
+  categoryId     String?
+  tags           Json        @default("[]")
+  seoTitle       String?
+  seoDescription String?
+  isPublished    Boolean     @default(false)
+  publishedAt    DateTime?
+  authorId       String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  category BlogCategory? @relation(fields: [categoryId], references: [id])
+  author   User?         @relation(fields: [authorId], references: [id])
+
+  @@index([slug])
+  @@index([isPublished])
+  @@map("blog_posts")
+}
+
+model ContactInquiry {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String
+  email       String?
+  subject     String?
+  inquiryType String?
+  message     String
+  status      String   @default("new")
+  createdAt   DateTime @default(now())
+
+  @@map("contact_inquiries")
+}
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  userId    String?
+  action    AuditAction @default(OTHER)
+  entity    String
+  entityId  String?
+  metadata  Json        @default("{}")
+  createdAt DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([entity])
+  @@map("audit_logs")
+}
+
+model AnalyticEvent {
+  id         String   @id @default(cuid())
+  event      String
+  path       String?
+  properties Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([event])
+  @@map("analytic_events")
+}
+
+
+
+
+

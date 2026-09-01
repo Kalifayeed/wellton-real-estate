@@ -1,0 +1,48 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env
+.env.local
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# prisma
+/prisma/*.db
+
+# uploaded media (runtime artifacts) — keep the .svg demo placeholders that are
+# referenced by prisma/seed.ts, ignore only raster uploads added at runtime.
+/public/uploads/properties/*.jpg
+/public/uploads/properties/*.jpeg
+/public/uploads/properties/*.png
+/public/uploads/properties/*.webp
+/public/uploads/properties/*.avif
+/storage/
+!/storage/.gitkeep

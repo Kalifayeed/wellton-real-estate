@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.env
+.env.local
+.env*.local
+public/uploads/properties/*.jpg
+public/uploads/properties/*.png
+public/uploads/properties/*.webp
+public/uploads/properties/*.avif
+storage
+README.md
+*.log
