@@ -12,9 +12,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
 
   const { id } = await params;
-  const doc = await prisma.applicationDocument.findUnique({ where: { id } });
+  const user = await prisma.user.findUnique({
+    where: { id: session.sub }, select: { isActive: true, role: true },
+  });
+  if (!user?.isActive) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const doc = await prisma.applicationDocument.findUnique({
+    where: { id }, include: { application: { select: { assignedToId: true } } },
+  });
   if (!doc) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+  if (user.role === 'AGENT' && doc.application.assignedToId !== session.sub) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {

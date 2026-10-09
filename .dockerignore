@@ -2,9 +2,10 @@ node_modules
 .next
 .git
 .env
-.env.local
-.env*.local
+.env.*
 public/uploads/properties/*.jpg
+public/uploads/properties/*.jpeg
+public/uploads/properties/*.gif
 public/uploads/properties/*.png
 public/uploads/properties/*.webp
 public/uploads/properties/*.avif

@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import UploadForm from './UploadForm';
 import { submitRentalApplication } from '@/actions/submissions';
 import { TextField, SelectField, TextAreaField, ErrorAlert, SuccessPanel, Honeypot } from '@/components/ui/form-fields';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
@@ -34,7 +35,7 @@ export default function RentalApplicationForm({ propertyId, propertyTitle }: Pro
   }
 
   return (
-    <form action={formAction} className="space-y-4">
+    <UploadForm action={formAction} className="space-y-4">
       <Honeypot />
       <input type="hidden" name="propertyId" value={propertyId} />
       <ErrorAlert message={state.message} />
@@ -96,6 +97,6 @@ export default function RentalApplicationForm({ propertyId, propertyTitle }: Pro
       <button type="submit" disabled={pending} className="btn-primary w-full">
         {pending ? 'Submitting application…' : 'Submit Rental Application'}
       </button>
-    </form>
+    </UploadForm>
   );
 }

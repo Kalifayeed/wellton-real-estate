@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { ownerSubmissionSchema, rentalApplicationSchema } from '@/lib/validation';
 import { fail, ok, zodToFieldErrors, type ActionState } from './shared';
 import { savePrivateDocument, savePublicImage } from '@/lib/storage';
+import { uploadFormError } from '@/lib/upload-limits';
 
 function isSpam(formData: FormData): boolean {
   const honeypot = formData.get('website');
@@ -13,6 +14,8 @@ function isSpam(formData: FormData): boolean {
 }
 
 export async function submitOwnerSubmission(_: ActionState, formData: FormData): Promise<ActionState> {
+  const uploadError = uploadFormError(formData);
+  if (uploadError) return fail(uploadError);
   if (isSpam(formData)) return ok('Thank you. We will be in touch shortly.');
   const parsed = ownerSubmissionSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fail('Please fix the errors below.', { fieldErrors: zodToFieldErrors(parsed.error) });
@@ -26,7 +29,7 @@ export async function submitOwnerSubmission(_: ActionState, formData: FormData):
       const saved = await savePublicImage(file);
       imageUrls.push(saved.url);
     } catch {
-      // skip invalid image
+      return fail('An image could not be uploaded. Please check the files and try again.');
     }
   }
 
@@ -63,6 +66,8 @@ export async function submitOwnerSubmission(_: ActionState, formData: FormData):
 }
 
 export async function submitRentalApplication(_: ActionState, formData: FormData): Promise<ActionState> {
+  const uploadError = uploadFormError(formData);
+  if (uploadError) return fail(uploadError);
   if (isSpam(formData)) return ok('Thank you. We will be in touch shortly.');
   const parsed = rentalApplicationSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fail('Please fix the errors below.', { fieldErrors: zodToFieldErrors(parsed.error) });
@@ -113,6 +118,7 @@ export async function submitRentalApplication(_: ActionState, formData: FormData
 
     // Handle uploaded supporting documents (private storage).
     const docs = formData.getAll('documents').filter((f): f is File => f instanceof File && f.size > 0);
+    let failedDocuments = 0;
     for (const doc of docs) {
       try {
         const saved = await savePrivateDocument(doc, application.id);
@@ -126,13 +132,15 @@ export async function submitRentalApplication(_: ActionState, formData: FormData
           },
         });
       } catch {
-        // skip invalid document
+        failedDocuments++;
       }
     }
 
     await logAnalytics('rental_application_submitted', { propertyId });
     return ok(
-      'Thank you! Your rental application has been submitted. Our team will review it and contact you about next steps.',
+      failedDocuments
+        ? 'Your application was submitted, but some documents could not be uploaded. Please contact our team to arrange a secure way to provide them.'
+        : 'Thank you! Your rental application has been submitted. Our team will review it and contact you about next steps.',
       { entityId: application.id, leadId: lead.id }
     );
   } catch (e) {

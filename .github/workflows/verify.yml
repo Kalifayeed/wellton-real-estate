@@ -1,0 +1,54 @@
+name: Verify production build
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: wellton_test
+          POSTGRES_PASSWORD: ci-only-test-password
+          POSTGRES_DB: wellton_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wellton_test -d wellton_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://wellton_test:ci-only-test-password@localhost:5432/wellton_test
+      DIRECT_URL: postgresql://wellton_test:ci-only-test-password@localhost:5432/wellton_test
+      AUTH_SECRET: ci-only-authentication-secret-not-for-production
+      NEXT_PUBLIC_SITE_URL: https://welltonproperties.co.ke
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run db:deploy
+      - run: npm test
+      - run: npm run build
+      - run: npm run typecheck
+      - name: Smoke test production routes
+        shell: bash
+        run: |
+          npm start > /tmp/wellton-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:3000/about > /dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://localhost:3000/ | grep -q 'Wellton'
+          curl --fail --silent http://localhost:3000/buy > /dev/null
+          curl --fail --silent http://localhost:3000/robots.txt | grep -q 'https://welltonproperties.co.ke/sitemap.xml'
+          curl --fail --silent http://localhost:3000/sitemap.xml | grep -q 'https://welltonproperties.co.ke'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:3000/admin)" = 307
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:3000/api/documents/test)" = 401

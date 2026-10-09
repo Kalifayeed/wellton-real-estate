@@ -24,6 +24,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://wellton_user:wellton_secret@db:5432/wellton?schema=public
+      DIRECT_URL: postgresql://wellton_user:wellton_secret@db:5432/wellton?schema=public
       AUTH_SECRET: ${AUTH_SECRET:-wellton-dev-secret-change-me}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
       NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-Wellton Real Estate}

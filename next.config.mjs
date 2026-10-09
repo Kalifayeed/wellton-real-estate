@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+const storageUrl = process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL) : null;
 const nextConfig = {
   // Self-contained production server output (used by the Docker deploy).
   output: 'standalone',
@@ -8,9 +9,11 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'inline',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    remotePatterns: [
-      // Local/uploaded images are served from same origin, nothing needed here.
-    ],
+    remotePatterns: storageUrl ? [{
+      protocol: 'https',
+      hostname: storageUrl.hostname,
+      pathname: `/storage/v1/object/public/${process.env.SUPABASE_PUBLIC_BUCKET || 'wellton-media'}/**`,
+    }] : [],
   },
   // Server actions must know about the upload body size for property media.
   experimental: {

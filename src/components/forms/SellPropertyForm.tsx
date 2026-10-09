@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import UploadForm from './UploadForm';
 import { submitOwnerSubmission } from '@/actions/submissions';
 import { TextField, SelectField, TextAreaField, ErrorAlert, SuccessPanel, Honeypot } from '@/components/ui/form-fields';
 import { buildWhatsAppLink, genericMessage } from '@/lib/whatsapp';
@@ -24,7 +25,7 @@ export default function SellPropertyForm() {
   }
 
   return (
-    <form action={formAction} className="space-y-4">
+    <UploadForm action={formAction} className="space-y-4">
       <Honeypot />
       <ErrorAlert message={state.message} />
       <p className="text-sm text-stone-500">
@@ -114,6 +115,6 @@ export default function SellPropertyForm() {
       <button type="submit" disabled={pending} className="btn-primary w-full">
         {pending ? 'Submitting…' : 'Submit Property'}
       </button>
-    </form>
+    </UploadForm>
   );
 }

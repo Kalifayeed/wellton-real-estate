@@ -134,6 +134,11 @@ Authorization is enforced **server-side** (middleware + server actions), **not**
 
 ## Deployment
 
+For the live **welltonproperties.co.ke** site, follow [DEPLOYMENT.md](DEPLOYMENT.md)
+for Vercel, Supabase, production credentials, database migrations and DNS.
+The Docker examples below are for local/self-hosted development and contain
+development credentials; do not expose them as a production deployment.
+
 ### A. Run the production build (simple)
 
 ```bash
@@ -200,5 +205,4 @@ Commission tracking, rental revenue tracking, management fees, landlord payments
 rent collection, maintenance requests, tenant accounts, client accounts, land sales, developer
 projects, short-term rentals, full CRM, automated WhatsApp/email, Facebook lead forms, WhatsApp
 Business API, mobile apps, valuation requests, landlord dashboards.
-
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import UploadForm from '@/components/forms/UploadForm';
 import { createProperty, updateProperty } from '@/actions/admin/properties';
 import { ErrorAlert, SuccessPanel } from '@/components/ui/form-fields';
 import type { ActionState } from '@/actions/shared';
@@ -29,7 +30,7 @@ export default function PropertyForm({ property, locations, amenities }: Props) 
   const fe = state.fieldErrors ?? {};
 
   return (
-    <form action={formAction} className="space-y-8">
+    <UploadForm action={formAction} className="space-y-8">
       {property && <input type="hidden" name="id" value={property.id} />}
       <ErrorAlert message={state.message} />
 
@@ -236,8 +237,7 @@ export default function PropertyForm({ property, locations, amenities }: Props) 
           </button>
         </div>
       </section>
-    </form>
+    </UploadForm>
   );
 }
-
 

@@ -4,11 +4,14 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { requireRoles } from '@/lib/auth';
 import { savePublicImage } from '@/lib/storage';
+import { uploadFormError } from '@/lib/upload-limits';
 import { slugify } from '@/lib/format';
 import { logAudit } from '@/lib/audit';
 import { fail, ok, type ActionState } from '../shared';
 
 export async function createProperty(_: ActionState, formData: FormData): Promise<ActionState> {
+  const uploadError = uploadFormError(formData);
+  if (uploadError) return fail(uploadError);
   const session = await requireRoles(['ADMIN', 'MANAGER']);
   const data = parsePropertyForm(formData);
   if (!data.title) return fail('Title is required.');
@@ -21,7 +24,7 @@ export async function createProperty(_: ActionState, formData: FormData): Promis
       const saved = await savePublicImage(file);
       imageUrls.push(saved.url);
     } catch {
-      // skip invalid upload
+      return fail('An image could not be uploaded. Please check the files and try again.');
     }
   }
 
@@ -77,6 +80,8 @@ export async function createProperty(_: ActionState, formData: FormData): Promis
 }
 
 export async function updateProperty(_: ActionState, formData: FormData): Promise<ActionState> {
+  const uploadError = uploadFormError(formData);
+  if (uploadError) return fail(uploadError);
   const session = await requireRoles(['ADMIN', 'MANAGER']);
   const id = String(formData.get('id') || '');
   const data = parsePropertyForm(formData);
@@ -89,7 +94,7 @@ export async function updateProperty(_: ActionState, formData: FormData): Promis
       const saved = await savePublicImage(file);
       imageUrls.push(saved.url);
     } catch {
-      // skip invalid upload
+      return fail('An image could not be uploaded. Please check the files and try again.');
     }
   }
 
@@ -239,5 +244,4 @@ function parsePropertyForm(formData: FormData) {
     virtualTourUrl: enumOrUndef('virtualTourUrl'),
   };
 }
-
 
